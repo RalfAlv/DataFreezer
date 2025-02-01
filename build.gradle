@@ -1,0 +1,61 @@
+plugins {
+    id 'java'
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+group = 'net.JavaKafka'
+version = '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21) // Usar JDK 21 explícitamente
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'javax.annotation:javax.annotation-api:1.3.2'
+    implementation 'io.grpc:grpc-netty-shaded:1.57.0'
+    implementation 'io.grpc:grpc-protobuf:1.57.0'
+    implementation 'io.grpc:grpc-stub:1.57.0'
+    implementation 'com.google.protobuf:protobuf-java:3.24.1'
+
+    testImplementation 'junit:junit:4.13.2'
+
+    implementation 'com.datastax.oss:java-driver-core:4.15.0'
+    implementation 'org.slf4j:slf4j-simple:2.0.7'
+
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.24.1"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.57.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                grpc {}
+            }
+        }
+    }
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+test {
+    useJUnitPlatform()
+}

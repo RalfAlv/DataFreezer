@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package backupservice;
+
+option java_package = "com.proto.backupservice";
+option java_multiple_files = true;
+
+service backupService{
+  //RPC to login
+  rpc Login (LoginRequest) returns (LoginResponse) {}
+}
+
+//Login request message
+message LoginRequest{
+  string username = 1;
+  string password = 2;
+}
+
+//Login response message
+message LoginResponse{
+  string sessionToken = 1;
+  string message = 2;
+  string success = 3;
+}
