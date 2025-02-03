@@ -1,3 +1,4 @@
+
 package com.DataFreezerClient.Client.src;
 
 import com.proto.backupservice.BackupServiceGrpc;
@@ -8,7 +9,13 @@ import io.grpc.ManagedChannelBuilder;
 
 import java.util.Scanner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BackupServiceClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(BackupServiceClient.class);
+
     public static void main(String[] args) {
         ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
                 .usePlaintext()
@@ -23,6 +30,7 @@ public class BackupServiceClient {
         while (true) {
             System.out.print("Alv> ");
             String input = scanner.nextLine().trim();
+            logger.debug("Received command: {}", input);
 
             if (input.startsWith("connect ")) {
                 // Split the entry into parts
@@ -44,12 +52,13 @@ public class BackupServiceClient {
                     if (loginResponse.getSuccess()) {
                         System.out.println("Login Successful. Session Token: " + loginResponse.getSessionToken());
                     } else {
-                        System.out.println("Error: " + loginResponse.getMessage());
+                        System.out.println("Error: Login failed." + loginResponse.getMessage());
                     }
                 } else {
                     System.out.println("Incorrect format. Use: connect <user> <password>");
                 }
             } else if (input.equals("exit")) {
+                System.out.println("Exiting the application...");
                 break label;
             } else if (input.equals("help")) {
                 System.out.println("Available commands:");
