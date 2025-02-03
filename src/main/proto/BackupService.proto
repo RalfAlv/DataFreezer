@@ -5,7 +5,7 @@ package backupservice;
 option java_package = "com.proto.backupservice";
 option java_multiple_files = true;
 
-service backupService{
+service BackupService{
   //RPC to login
   rpc Login (LoginRequest) returns (LoginResponse) {}
 }
@@ -20,5 +20,5 @@ message LoginRequest{
 message LoginResponse{
   string sessionToken = 1;
   string message = 2;
-  string success = 3;
+  bool success = 3;
 }
