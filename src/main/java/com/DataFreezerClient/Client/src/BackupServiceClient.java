@@ -1,5 +1,7 @@
+
 package com.DataFreezerClient.Client.src;
 
+import com.common.PropertiesManager;
 import com.proto.backupservice.BackupServiceGrpc;
 import com.proto.backupservice.LoginRequest;
 import com.proto.backupservice.LoginResponse;
@@ -8,9 +10,19 @@ import io.grpc.ManagedChannelBuilder;
 
 import java.util.Scanner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BackupServiceClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(BackupServiceClient.class);
+    private static final String clienthost = PropertiesManager.getInstance().getProperty("main.host");
+    private static final int clientPort = PropertiesManager.getInstance().getIntProperty("grpc.port");
+
     public static void main(String[] args) {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+
+        /*HACER UNA CONSTANTE DE ( localhost, 50051)*/
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(clienthost, clientPort)
                 .usePlaintext()
                 .build();
 
@@ -21,8 +33,9 @@ public class BackupServiceClient {
 
         label:
         while (true) {
-            System.out.print("Alv> ");
+            System.out.print("Alvrz> ");
             String input = scanner.nextLine().trim();
+            logger.debug("Received command: {}", input);
 
             if (input.startsWith("connect ")) {
                 // Split the entry into parts
@@ -42,14 +55,14 @@ public class BackupServiceClient {
 
                     // Show the answer
                     if (loginResponse.getSuccess()) {
-                        System.out.println("Login Successful. Session Token: " + loginResponse.getSessionToken());
                     } else {
-                        System.out.println("Error: " + loginResponse.getMessage());
+                        System.out.println("Error: Login failed." + loginResponse.getMessage());
                     }
                 } else {
                     System.out.println("Incorrect format. Use: connect <user> <password>");
                 }
             } else if (input.equals("exit")) {
+                System.out.println("Exiting the application...");
                 break label;
             } else if (input.equals("help")) {
                 System.out.println("Available commands:");
