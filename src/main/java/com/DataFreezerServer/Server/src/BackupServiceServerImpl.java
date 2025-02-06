@@ -1,5 +1,6 @@
 package com.DataFreezerServer.Server.src;
 
+import com.common.PropertiesManager;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -20,11 +21,14 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
     private static final Logger logger = LoggerFactory.getLogger(BackupServiceServer.class);
     private final CqlSession cassandraSession;
 
+    private static final  String serverHost = PropertiesManager.getInstance().getProperty("main.host");
+    private static final int portCassandra = PropertiesManager.getInstance().getIntProperty("cassandra.port");
+
     public BackupServiceServerImpl() {
         try {
             logger.info("Attempting to connect to Cassandra...");
             this.cassandraSession = CqlSession.builder()
-                    .addContactPoint(new InetSocketAddress("localhost", 9042))
+                    .addContactPoint(new InetSocketAddress(serverHost, portCassandra))
                     .withKeyspace("dbdatafreezer")
                     .withLocalDatacenter("datacenter1")
                     .build();

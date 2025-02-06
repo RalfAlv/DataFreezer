@@ -2,9 +2,9 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <!-- Personaliza el patrón para colores -->
+            <!-- Customize the pattern for colors.-->
             <pattern>
-                <!-- Colores personalizados para cada nivel -->
+                <!-- Custom colors for each level -->
                 %d{HH:mm:ss} [%highlight(%p)] %cyan(%logger{36}) - %msg%n
             </pattern>
         </encoder>
