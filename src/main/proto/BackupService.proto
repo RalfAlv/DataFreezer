@@ -8,6 +8,8 @@ option java_multiple_files = true;
 service BackupService{
   //RPC to login
   rpc Login (LoginRequest) returns (LoginResponse) {}
+  //RPC UploadFile
+  rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse) {}
 }
 
 //Login request message
@@ -21,4 +23,20 @@ message LoginResponse{
   string sessionToken = 1;
   string message = 2;
   bool success = 3;
+}
+
+//Upload request message
+message UploadFileRequest{
+string username = 1;
+string file_name = 2;
+bytes data = 3;
+int64 chunk_number = 4;
+int64 total_chunks = 5;
+}
+
+//Upload response message
+message UploadFileResponse{
+  bool sucess = 1;
+  string message = 2;
+  string file_id = 3;
 }
