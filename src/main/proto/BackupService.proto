@@ -10,6 +10,12 @@ service BackupService{
   rpc Login (LoginRequest) returns (LoginResponse) {}
   //RPC UploadFile
   rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse) {}
+  //RPC ListFile
+  rpc ListFile (ListFileRequest) returns (stream ListFileResponse) {}
+  //RPC DownloadFile
+  rpc DownloadFile (DownloadFileRequest) returns (stream DownloadFileResponse) {}
+  //RPC DeleteFile
+  rpc DeleteFile (DeleteFileRequest) returns (DeleteFileResponse) {}
 }
 
 //Login request message
@@ -39,4 +45,39 @@ message UploadFileResponse{
   bool sucess = 1;
   string message = 2;
   string file_id = 3;
+}
+
+//ListFile request message
+message ListFileRequest {
+  string user_name = 1;
+}
+
+//ListFile response message
+message ListFileResponse {
+  string file_name = 1;
+}
+
+//Download request message
+message DownloadFileRequest{
+  string username = 1;
+  string file_name = 2;
+}
+
+//Download response message
+message DownloadFileResponse{
+  bytes data = 3;
+  int64 chunk_number = 4;
+  int64 total_chunks = 5;
+}
+
+//Delete request message
+message DeleteFileRequest{
+  string session_token = 1;
+  string file_name = 2;
+}
+
+//Delete response message
+message DeleteFileResponse{
+  bool success = 1;
+  string message = 2;
 }
