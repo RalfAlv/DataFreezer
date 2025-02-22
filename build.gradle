@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'com.google.protobuf' version '0.9.4'
+    id 'com.github.johnrengelman.shadow' version '8.1.1' //fat jar
 }
 
 group = 'net.JavaKafka'
@@ -53,10 +54,36 @@ compileJava {
     options.encoding = 'UTF-8'
 }
 
-test {
-    useJUnitPlatform()
+
+//FATJAR
+tasks.named('shadowJar').configure {
+    enabled = false
 }
 
-test {
-    useJUnitPlatform()
-}
+//SERVER FAT JAR
+    tasks.register('shadowJarServer', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+        archiveBaseName.set('datafreezer-server')
+        archiveVersion.set('1.0.0')
+        archiveClassifier.set('')
+        mergeServiceFiles()
+        manifest{
+            attributes 'Main-Class' : 'com.datafreezer.server.BackupServiceServer'
+        }
+        from sourceSets.main.output
+        configurations = [project.configurations.runtimeClasspath]
+    }
+
+//CLIENT FAT JAR
+    tasks.register('shadowJarClient', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+        archiveBaseName.set('datafreezer-client')
+        archiveVersion.set('1.0.0')
+        archiveClassifier.set('')
+        mergeServiceFiles()
+        manifest{
+            attributes 'Main-Class' : 'com.datafreezer.client.BackupServiceClient'
+        }
+        from sourceSets.main.output
+        configurations = [project.configurations.runtimeClasspath]
+    }
+
+tasks.build.dependsOn shadowJarServer, shadowJarClient

@@ -1,6 +1,6 @@
-package com.DataFreezerServer.Server.src;
+package com.datafreezer.server;
 
-import com.common.PropertiesManager;
+import com.datafreezer.common.PropertiesManager;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -37,8 +37,9 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
 
     private static final String serverHost = PropertiesManager.getInstance().getProperty("main.host");
     private static final int portCassandra = PropertiesManager.getInstance().getIntProperty("cassandra.port");
-    //private static final String Files_dir = PropertiesManager.getInstance().getProperty("files.directory");
-    private static final String Files_dir = "src/main/java/com/common/files";
+    private static final String Files_dir = PropertiesManager.getInstance().getProperty("storage.path");
+    //private static final String Files_dir = "src/main/java/com/common/files";
+
     //private static final int chunkZise = PropertiesManager.getInstance().getIntProperty("chunk.size");
     private static final int chunk_size = 1024 * 1024;
 

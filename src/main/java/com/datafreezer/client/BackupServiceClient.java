@@ -1,6 +1,6 @@
-package com.DataFreezerClient.Client.src;
+package com.datafreezer.client;
 
-import com.common.PropertiesManager;
+import com.datafreezer.common.PropertiesManager;
 import com.proto.backupservice.*;
 
 import io.grpc.ManagedChannel;

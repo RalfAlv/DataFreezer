@@ -1,6 +1,6 @@
-package com.DataFreezerServer.Server.src;
+package com.datafreezer.server;
 
-import com.common.PropertiesManager;
+import com.datafreezer.common.PropertiesManager;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
