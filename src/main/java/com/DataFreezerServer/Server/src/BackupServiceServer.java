@@ -5,17 +5,9 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-/**
- * This class is responsible for starting the gRPC server for the backup service.
- * <p>The class sets up the server to listen on port 50051 and adds the backup service.</p>
- * <p>The server handles client connections and waits for the server to shut down indefinitely.</p>
- */
 
 public class BackupServiceServer {
 
