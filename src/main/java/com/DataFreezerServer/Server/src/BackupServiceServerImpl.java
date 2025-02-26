@@ -14,6 +14,7 @@ import com.proto.backupservice.UploadFileResponse;
 import io.grpc.stub.StreamObserver;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.util.UUID;
@@ -21,10 +22,17 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implementation of the BackupService gRPC server.
+ * Manages connection to Cassandra.
+ */
 public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImplBase {
     private static final Logger logger = LoggerFactory.getLogger(BackupServiceServer.class);
     private final CqlSession cassandraSession;
-    private static final String Files_dir = "src/main/java/com/common/files";
+
+    private static final int CHUNK_SIZE = Integer.parseInt(PropertiesManager.getInstance().getProperty("chunk.size"));
+    private static final String SAVE_FILE_NAME = PropertiesManager.getInstance().getProperty("save.file.dir");
+    private static final int TIME_HOUR = Integer.parseInt(PropertiesManager.getInstance().getProperty("time.hour.ms"));
 
     private static final String serverHost = PropertiesManager.getInstance().getProperty("main.host");
     private static final int portCassandra = PropertiesManager.getInstance().getIntProperty("cassandra.port");
@@ -40,7 +48,13 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
         }
     }
 
-
+    /**
+     * Handles user login by verifying credentials against the database.
+     * If successful, generates and stores a session token.
+     *
+     * @param request          The login request containing username and password.
+     * @param responseObserver The response observer to send login results.
+     */
     @Override
     public void login(LoginRequest request, StreamObserver<LoginResponse> responseObserver) {
         String username = request.getUsername();
@@ -59,7 +73,7 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
             if (row != null) {
                 // Generate session token
                 String sessionToken = UUID.randomUUID().toString();
-                long expirationTime = System.currentTimeMillis() + (60 * 60 * 1000); // 1 hr
+                long expirationTime = System.currentTimeMillis() + (TIME_HOUR); // 1 hr
                 // Insert the token into the sessions table
                 cassandraSession.execute("INSERT INTO session_tokens (username, \"token\", expiration_time, created_at) VALUES (?, ?, ?, toTimestamp(now()))", username, sessionToken, expirationTime);
 
@@ -81,6 +95,14 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
         }
     }
 
+    /**
+     * Handles file upload through a gRPC bidirectional stream.
+     * The method receives file chunks from the client,
+     * writes them to disk, and stores metadata in the database.
+     *
+     * @param responseObserver The response observer to notify the client of the upload status.
+     * @return A StreamObserver to process incoming file chunks.
+     */
     @Override
     public StreamObserver<UploadFileRequest> uploadFile(StreamObserver<UploadFileResponse> responseObserver) {
         return new StreamObserver<>() {
@@ -94,33 +116,9 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
             public void onNext(UploadFileRequest request) {
                 try {
                     if (raf == null) {
-                        fileName = request.getFileName();
-                        fileId = UUID.randomUUID();
-                        totalChunks = request.getTotalChunks();
-
-                        File file = new File(Files_dir, fileName);
-
-                        int counter = 1;
-                        while (file.exists()) {
-                            String name = fileName;
-                            int dotIndex = fileName.lastIndexOf('.');
-                            if (dotIndex != -1) {
-                                name = fileName.substring(0, dotIndex) + "_" + counter + fileName.substring(dotIndex);
-                            } else {
-                                name = fileName + "_" + counter;
-                            }
-                            file = new File(Files_dir, name);
-                            counter++;
-                        }
-                        fileName = file.getName();
-                        raf = new RandomAccessFile(file, "rw");
-                        logger.info("Starting upload of file: {}", fileName);
+                        initializeFileUpload(request);
                     }
-
-                    //write chunk
-                    raf.seek(request.getChunkNumber() * 1024 * 1024); //1MB
-                    raf.write(request.getData().toByteArray());
-                    receivedChunks++;
+                    writeChunk(request);
 
                     if (receivedChunks == totalChunks) {
                         completeUpload(request.getUsername());
@@ -130,13 +128,48 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
                 }
             }
 
+            private void initializeFileUpload(UploadFileRequest request) throws IOException {
+                fileName = request.getFileName();
+                fileId = UUID.randomUUID();
+                totalChunks = request.getTotalChunks();
+
+                File file = createUniqueFile(fileName);
+                fileName = file.getName();
+                raf = new RandomAccessFile(file, "rw");
+                logger.info("Starting upload of file: {}", fileName);
+            }
+
+            private File createUniqueFile(String originalFileName) {
+                File file = new File(SAVE_FILE_NAME, originalFileName);
+
+                int counter = 1;
+                while (file.exists()) {
+                    String name = originalFileName;
+                    int dotIndex = originalFileName.lastIndexOf('.');
+                    if (dotIndex != -1) {
+                        name = originalFileName.substring(0, dotIndex) + "_" + counter + originalFileName.substring(dotIndex);
+                    } else {
+                        name = originalFileName + "_" + counter;
+                    }
+                    file = new File(SAVE_FILE_NAME, name);
+                    counter++;
+                }
+                return file;
+            }
+
+            private void writeChunk(UploadFileRequest request) throws IOException {
+                raf.seek(request.getChunkNumber() * CHUNK_SIZE); // 1MB
+                raf.write(request.getData().toByteArray());
+                receivedChunks++;
+            }
+
             private void completeUpload(String username) {
                 try {
                     long fileSize = raf.length();
                     raf.close();
 
                     UUID userId = getUserId(username);
-                    String filePath = Files_dir + File.separator + fileName;
+                    String filePath = SAVE_FILE_NAME + File.separator + fileName;
 
                     // Insert file metadata
                     cassandraSession.execute(
@@ -191,9 +224,15 @@ public class BackupServiceServerImpl extends BackupServiceGrpc.BackupServiceImpl
         };
     }
 
-
+    /**
+     * Retrieves the unique user ID from the database, based on the provided username.
+     *
+     * @param username The username to look up.
+     * @return The UUID of the user if found, otherwise null.
+     */
     private UUID getUserId(String username) {
         var row = cassandraSession.execute("SELECT user_id FROM users WHERE username = ? ALLOW FILTERING", username).one();
         return row != null ? row.getUuid("user_id") : null;
     }
+
 }
